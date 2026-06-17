@@ -34,9 +34,11 @@ const auth = getAuth(app)
  * after a successful Google sign-in.
  */
 export const ACCESS_ALLOWLIST = [
-  'nspenterprises24@gmail.com',   // Owner / bootstrap admin
-  'anshulgoel5884@gmail.com',     // Manager
-  'info@unicoproductsindia.com',  // Owner (billing login)
+  'nspenterprises24@gmail.com',   // Owner / bootstrap admin — sign in with THIS account
+  // Add a manager's Google email here later, e.g. 'anshulgoel5884@gmail.com'.
+  // NOTE: attendance (salary) data is owner-only at the Firestore-rules level, so a
+  // manager would see Production/Pending but the Manpower tile would stay empty
+  // until those rules are widened.
 ]
 export const isAllowed = (email) =>
   !!email && ACCESS_ALLOWLIST.includes(email.toLowerCase())
