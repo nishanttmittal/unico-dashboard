@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+/* ──────────────────────────────────────────────────────────────────────────
+   UNICO CEO Dashboard — design system
+   A calm, premium "factory command center": deep slate canvas, one vivid
+   accent per metric, oversized tabular numerals, generous breathing room.
+   Built for a phone screen first, glanceable in 2 seconds.
+   ────────────────────────────────────────────────────────────────────────── */
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Sora", "Inter", ui-sans-serif, sans-serif;
+
+  --color-canvas: #0b1120;      /* page background */
+  --color-surface: #131c31;     /* card background */
+  --color-surface-2: #1b263f;   /* raised / hover */
+  --color-hair: #27324d;        /* hairline borders */
+  --color-ink: #f1f5fb;         /* primary text */
+  --color-muted: #93a1bd;       /* secondary text */
+
+  --color-prod: #34d399;        /* production — emerald */
+  --color-pending: #fbbf24;     /* WIP — amber */
+  --color-people: #60a5fa;      /* manpower — blue */
+  --color-money: #c084fc;       /* contractor money — violet */
+}
+
+* { -webkit-tap-highlight-color: transparent; }
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(96,165,250,0.10), transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, rgba(52,211,153,0.08), transparent 55%),
+    var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* Big numerals stay aligned and legible. */
+.numerals { font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+
+.font-display { font-family: var(--font-display); }
+
+/* Soft entrance so the screen feels alive, not janky. */
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.rise { animation: rise .45s cubic-bezier(.2,.7,.3,1) both; }
+
+@keyframes pulse-soft { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
+.pulse-soft { animation: pulse-soft 1.4s ease-in-out infinite; }
+
+/* Hide scrollbars on the horizontal detail rows but keep scrolling. */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
