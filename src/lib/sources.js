@@ -143,3 +143,54 @@ function groupSum(rows, keyFn, valFn) {
   for (const r of rows) m.set(keyFn(r), (m.get(keyFn(r)) || 0) + valFn(r))
   return [...m.entries()].map(([name, qty]) => ({ name, qty })).sort((a, b) => b.qty - a.qty)
 }
+
+// ── Leads feed: IndiaMART alerts + WhatsApp enquiries, newest first ──────────
+// Both are root collections written by the lead pollers (Admin SDK). We merge
+// them into one normalized list for the command-center "Leads" view.
+export async function getLeads() {
+  const [im, wa, statusRows] = await Promise.all([
+    readRoot('indiamart_leads').catch(() => []),
+    readRoot('whatsapp_leads').catch(() => []),
+    readRoot('lead_status').catch(() => []),
+  ])
+  const statusOf = new Map(statusRows.map((s) => [s.id, s.status || 'new']))
+  const skipMeta = (r) => r.id !== '_meta_seeded'
+
+  const imRows = im.filter(skipMeta).map((r) => ({
+    id: 'im_' + r.id,
+    source: 'IndiaMART',
+    name: r.name || 'Buyer',
+    company: r.company || '',
+    phone: r.mobile || '',
+    product: r.product || '',
+    message: r.last_message || '',
+    place: [r.city, r.state].filter(Boolean).join(', '),
+    when: r.last_contact_date || '',
+    ts: Date.parse((r.last_contact_date || '').replace(' ', 'T')) || (r.capturedAt?.seconds || 0) * 1000,
+    status: statusOf.get('im_' + r.id) || 'new',
+  }))
+
+  const waRows = wa.filter(skipMeta).map((r) => ({
+    id: 'wa_' + r.id,
+    source: 'WhatsApp',
+    name: r.name || r.number || 'Buyer',
+    company: '',
+    phone: r.number || '',
+    product: '',
+    message: r.firstMessage || '',
+    place: '',
+    when: r.firstSeenAt || '',
+    ts: (r.firstSeenTs ? r.firstSeenTs * 1000 : 0) || (r.capturedAt?.seconds || 0) * 1000,
+    status: statusOf.get('wa_' + r.id) || 'new',
+  }))
+
+  const all = [...imRows, ...waRows].sort((a, b) => (b.ts || 0) - (a.ts || 0))
+  const count = (s) => all.filter((l) => l.status === s).length
+  return {
+    all,
+    total: all.length,
+    indiamart: imRows.length,
+    whatsapp: waRows.length,
+    counts: { new: count('new'), followup: count('followup'), scrap: count('scrap') },
+  }
+}

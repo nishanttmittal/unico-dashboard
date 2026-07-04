@@ -10,7 +10,7 @@
  * allowlist below, not from hiding these values.
  */
 import { initializeApp } from 'firebase/app'
-import { getFirestore, collection, getDocs, query, where } from 'firebase/firestore'
+import { getFirestore, collection, getDocs, query, where, doc, setDoc, deleteField } from 'firebase/firestore'
 import {
   getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged,
 } from 'firebase/auth'
@@ -67,4 +67,17 @@ export async function readByDate(ns, coll, dateStr) {
 export async function readRoot(coll) {
   const snap = await getDocs(collection(db, coll))
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+}
+
+/**
+ * Set a lead's triage flag ('followup' | 'scrap' | 'new'). Writes ONLY to the
+ * owner-only `lead_status` collection — never to the captured lead data. Passing
+ * 'new' clears the flag (back to untriaged).
+ */
+export async function setLeadStatus(leadId, status) {
+  const ref = doc(db, 'lead_status', leadId)
+  await setDoc(ref, {
+    status: status === 'new' ? deleteField() : status,
+    updatedAt: Date.now(),
+  }, { merge: true })
 }
