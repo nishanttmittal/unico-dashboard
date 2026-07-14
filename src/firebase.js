@@ -10,7 +10,7 @@
  * allowlist below, not from hiding these values.
  */
 import { initializeApp } from 'firebase/app'
-import { getFirestore, collection, getDocs, query, where, doc, setDoc, deleteField } from 'firebase/firestore'
+import { getFirestore, collection, getDocs as _getDocs, query, where, doc, setDoc, serverTimestamp, increment, deleteField } from 'firebase/firestore'
 import {
   getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged,
 } from 'firebase/auth'
@@ -27,6 +27,24 @@ export const firebaseConfig = {
 const app = initializeApp(firebaseConfig)
 export const db = getFirestore(app)
 const auth = getAuth(app)
+
+// Firestore READ meter → usage_reads/{date}.totals.dashboard (non-invasive quota diagnosis).
+let _pendingReads = 0, _readTimer = null
+function _flushReads() {
+  if (_readTimer) { clearTimeout(_readTimer); _readTimer = null }
+  const n = _pendingReads; _pendingReads = 0
+  if (!n || !db) return
+  const d = new Date(Date.now() + 5.5 * 3600 * 1000).toISOString().slice(0, 10)
+  setDoc(doc(db, 'usage_reads', d), { totals: { dashboard: increment(n) }, updatedAt: serverTimestamp() }, { merge: true }).catch(() => { _pendingReads += n })
+}
+function getDocs(q) {
+  return _getDocs(q).then((s) => {
+    _pendingReads += s.size || 0
+    if (_pendingReads >= 100) _flushReads(); else if (!_readTimer) _readTimer = setTimeout(_flushReads, 10000)
+    return s
+  })
+}
+if (typeof document !== 'undefined') document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') _flushReads() })
 
 /**
  * Who may open the CEO dashboard. Add a manager's Google email here (lowercase)
