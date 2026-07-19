@@ -1,9 +1,15 @@
 /**
- * Firebase — READ-ONLY access to the shared `unico-operations` project.
+ * Firebase — access to the shared `unico-operations` project.
  * ──────────────────────────────────────────────────────────────────────────
- * This dashboard NEVER writes to Firestore. It only reads data the factory
- * apps (welder / plating / plastic / attendance) already produce, so it can
- * never corrupt production data.
+ * READ-ONLY for all FACTORY data: this dashboard only reads what the factory
+ * apps (welder / plating / plastic / attendance) produce, so it can never
+ * corrupt production data.
+ *
+ * It DOES write two of its own things (corrected 2026-07-19 — the old comment
+ * claimed it never wrote at all, which was wrong):
+ *   1. `usage_reads`  — read-quota counters (bumpReads, below)
+ *   2. lead status    — updates the status of a lead (setLeadStatus, below)
+ * Neither touches factory production records.
  *
  * The web config below is NOT secret — Firebase web keys are meant to ship in
  * the browser. Security comes from Firestore Rules + the Google-login
